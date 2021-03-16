@@ -1,7 +1,9 @@
 import time
 import sys
 import random
-
+import signal
+import os
+import errno
 import times
 import rq
 import rq.job
@@ -71,6 +73,20 @@ class WindowsWorker(rq.Worker):
         success = self.perform_job(job, queue)
 
         self._is_horse = False
+
+    def kill_horse(self, sig=signal.CTRL_C_EVENT):
+        """
+        Kill the horse but catch "No such process" error has the horse could already be dead.
+        """
+        try:
+            os.kill(self.horse_pid, signal.CTRL_BREAK_EVENT )
+            self.log.info('Killed horse pid %s', self.horse_pid)
+        except OSError as e:
+            if e.errno == errno.ESRCH:
+                # "No such process" is fine with us
+                self.log.debug('Horse already dead')
+            else:
+                raise
 
     def perform_job(self, job, queue, heartbeat_ttl=None):
         """Performs the actual work of a job.  Will/should only be called

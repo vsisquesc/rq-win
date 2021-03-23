@@ -74,13 +74,14 @@ class WindowsWorker(rq.Worker):
 
         self._is_horse = False
 
-    def kill_horse(self, sig=signal.CTRL_C_EVENT):
+    def kill_horse(self, sig=signal.SIGINT):
         """
         Kill the horse but catch "No such process" error has the horse could already be dead.
         """
         try:
-            os.kill(self.horse_pid, signal.CTRL_BREAK_EVENT )
-            self.log.info('Killed horse pid %s', self.horse_pid)
+            pid = self.pid
+            os.kill(pid, sig )
+            self.log.info('Killed horse pid %s', pid)
         except OSError as e:
             if e.errno == errno.ESRCH:
                 # "No such process" is fine with us
